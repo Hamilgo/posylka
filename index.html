@@ -44,6 +44,31 @@
   #scroll button { font: 600 15px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; padding: 10px 16px;
     border-radius: 22px; border: 0; cursor: pointer; background: #7a3b12; color: #fff3d6; }
   #scroll button.alt { background: rgba(122,59,18,.15); color: #5a2c0c; }
+  .w { display: inline-block; white-space: nowrap; }
+  .w.lit { animation: lit 1s ease-out; }
+  @keyframes lit { 0% { color: #c98a12; text-shadow: 0 0 10px rgba(255,190,40,.95); } 100% { color: inherit; text-shadow: none; } }
+  .g { display: inline-block; width: .6em; height: .92em; vertical-align: -.14em; margin-right: .04em; }
+  .g svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  #letter .w .g { color: #3d5a2a; }
+  .spark { position: absolute; pointer-events: none; color: #f5b70a; font-size: 15px; z-index: 2;
+    animation: spark .9s ease-out forwards; text-shadow: 0 0 6px rgba(255,200,40,.9); }
+  @keyframes spark { 0% { opacity: 1; transform: translate(-50%, 0) scale(.5); } 100% { opacity: 0; transform: translate(-50%, -26px) scale(1.25); } }
+  #actions { text-align: center; margin-top: 12px; min-height: 30px; }
+  #actions .puzzle { margin: 0 0 10px; font: 600 15px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #7a4a1a; }
+  .book { display: inline-flex; flex-direction: column; align-items: center; gap: 7px; background: none !important; border: 0; cursor: pointer;
+    padding: 4px !important; animation: bookIn .7s cubic-bezier(.2,1.4,.4,1) both; }
+  .book .cover { width: 84px; height: 104px; border-radius: 4px 9px 9px 4px; border: 2px solid #d8b24a; display: flex; align-items: center;
+    justify-content: center; text-align: center; padding: 8px; box-sizing: border-box; font: 700 13px/1.15 Georgia, "Times New Roman", serif;
+    color: #ffe9a8; animation: glowBook 1.8s ease-in-out infinite; }
+  .book.mudora .cover { background: linear-gradient(135deg, #3b7d46, #1f4a28); }
+  .book.es .cover { background: linear-gradient(180deg, #c60b1e 0 27%, #ffc400 27% 73%, #c60b1e 73%); color: #6b1a00; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+  .book .cap { font: 600 14px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #5a2c0c; }
+  @keyframes bookIn { from { opacity: 0; transform: translateY(16px) scale(.55); } to { opacity: 1; transform: none; } }
+  @keyframes glowBook { 0%, 100% { box-shadow: inset 7px 0 0 rgba(0,0,0,.25), 0 0 8px rgba(255,210,80,.35); }
+    50% { box-shadow: inset 7px 0 0 rgba(0,0,0,.25), 0 0 22px rgba(255,210,80,.95); } }
+  .book.used { animation: bookUse .75s ease-in forwards; pointer-events: none; }
+  @keyframes bookUse { to { opacity: 0; transform: translateY(-34px) scale(1.45) rotate(-8deg); } }
+  #actions .ghost { animation: bookIn .5s ease both; }
   #note { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
     z-index: 5; display: none; font: 600 16px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     padding: 11px 20px; border-radius: 24px; border: 0; cursor: pointer; background: #f3dfae; color: #5a2c0c;
@@ -63,21 +88,9 @@
 
 <div id="scrollWrap">
   <div id="scroll">
-    <!-- ===== Texto de la nota (editable) ===== -->
-    <h2>Неофициальная нота посла Испании</h2>
-    <p class="meta">Москва, 11 ноября. Совершенно неофициально <span class="flag"></span></p>
-    <p>Посол Испании поздравляет с днем рождения героиню, которая:</p>
-    <ul>
-      <li>освободила Испанию от турков</li>
-      <li>подарила миру мир (дипломатически)</li>
-      <li>выносит любого пвп игрока с 2 отрядами войск</li>
-      <li>и носит имя легендарного транзистора</li>
-    </ul>
-    <p>Желаю, чтобы тебя звали во все игры, даже если ты девочка и тебя зовут как транзистор. А главное - чтобы твои следующие годы были полны радости.</p>
-    <p><b>Посол просит аудиенции, чтобы вручить подарок лично 🎁</b><br>Ответ принимается в Телеграм.</p>
-    <p class="seal">Посол (неофициальный) 🙇‍♂️</p>
-    <!-- ===== Fin del texto ===== -->
-    <div class="btns">
+    <div id="letter"></div>
+    <div id="actions"></div>
+    <div class="btns" id="btnsFinal">
       <button id="again">🔁 Еще раз</button>
       <button id="fold" class="alt">👀 Свернуть</button>
     </div>
@@ -96,6 +109,129 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
 
+  // ---------- Carta mágica: runas -> español -> ruso ----------
+  var LETTER = {
+    es: [
+      ['h2', 'Nota no oficial del embajador de España'],
+      ['p.meta', 'Moscú, 11 de noviembre. Totalmente no oficial [flag]'],
+      ['p', 'El embajador de España felicita por su cumpleaños a la heroína que:'],
+      ['li', 'liberó España de los turcos'],
+      ['li', 'regaló la paz al mundo (diplomáticamente)'],
+      ['li', 'acaba con cualquier jugador de PvP con 2 escuadrones'],
+      ['li', 'y lleva el nombre de un transistor legendario'],
+      ['p', 'Te deseo que te inviten a todos los juegos, aunque seas una chica y te llames como un transistor. Y sobre todo, que tus próximos años estén llenos de alegría.'],
+      ['p.b', 'El embajador solicita audiencia para entregarte el regalo en persona 🎁'],
+      ['p', 'Se aceptan respuestas por Telegram.'],
+      ['p.seal', 'El embajador (no oficial) 🙇‍♂️']
+    ],
+    ru: [
+      ['h2', 'Неофициальная нота посла Испании'],
+      ['p.meta', 'Москва, 11 ноября. Совершенно неофициально [flag]'],
+      ['p', 'Посол Испании поздравляет с днем рождения героиню, которая:'],
+      ['li', 'освободила Испанию от турков'],
+      ['li', 'подарила миру мир (дипломатически)'],
+      ['li', 'выносит любого пвп игрока с 2 отрядами войск'],
+      ['li', 'и носит имя легендарного транзистора'],
+      ['p', 'Желаю, чтобы тебя звали во все игры, даже если ты девочка и тебя зовут как транзистор. А главное - чтобы твои следующие годы были полны радости.'],
+      ['p.b', 'Посол просит аудиенции, чтобы вручить подарок лично 🎁'],
+      ['p', 'Ответ принимается в Телеграм.'],
+      ['p.seal', 'Посол (неофициальный) 🙇‍♂️']
+    ]
+  };
+  var EMOJI = /[☀-➿\uD83C-\uDBFF]/;
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
+  var glyphCache = {};
+  function glyph(ch, salt) {                         // runa inventada, estilo antiguo (no es el alfabeto de Nintendo)
+    var key = ch + '|' + salt; if (glyphCache[key]) return glyphCache[key];
+    var r = rng(ch.toLowerCase().charCodeAt(0) * 977 + salt * 7919 + 13), d = [], dots = '';
+    var x = 2 + Math.floor(r() * 7);
+    d.push(r() < 0.6 ? 'M' + x + ' 1V13' : 'M1 ' + (2 + Math.floor(r() * 10)) + 'H9');
+    var n = 1 + Math.floor(r() * 2);
+    for (var i = 0; i < n; i++) {
+      switch (Math.floor(r() * 7)) {
+        case 0: d.push('M5 2L9 9H1Z'); break;
+        case 1: d.push(r() < 0.5 ? 'M1 1L9 13' : 'M9 1L1 13'); break;
+        case 2: d.push('M2 3Q8 3 8 8'); break;
+        case 3: d.push('M1 5L5 9L9 5'); break;
+        case 4: d.push('M1 ' + (r() < 0.5 ? 3 : 11) + 'H9'); break;
+        case 5: dots += '<circle cx="5" cy="' + (3 + Math.floor(r() * 8)) + '" r="1.8"/>'; break;
+        default: dots += '<circle cx="' + (2 + Math.floor(r() * 7)) + '" cy="12.5" r=".9" fill="currentColor"/>';
+      }
+    }
+    return (glyphCache[key] = '<span class="g"><svg viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="' + d.join('') + '"/>' + dots + '</svg></span>');
+  }
+  function setWord(s, how, salt) {
+    var t = s.dataset.t;
+    if (how === 'text' || EMOJI.test(t)) { s.textContent = t; return; }
+    s.innerHTML = Array.from(t).map(function (ch) { return glyph(ch, salt || 0); }).join('');
+  }
+  function renderLetter(lang) {
+    var box = $('letter'), ul = null, words = []; box.innerHTML = '';
+    LETTER[lang].forEach(function (b) {
+      var tag = b[0].split('.')[0], cls = b[0].split('.')[1], el;
+      if (tag === 'li') { if (!ul) { ul = document.createElement('ul'); box.appendChild(ul); } el = document.createElement('li'); ul.appendChild(el); }
+      else { ul = null; el = document.createElement(tag); if (cls === 'b') { el.style.fontWeight = '700'; } else if (cls) el.className = cls; box.appendChild(el); }
+      b[1].split(' ').forEach(function (tk, i) {
+        if (i) el.appendChild(document.createTextNode(' '));
+        if (tk === '[flag]') { var f = document.createElement('span'); f.className = 'flag'; el.appendChild(f); return; }
+        var s = document.createElement('span'); s.className = 'w'; s.dataset.t = tk; setWord(s, 'glyph', 0); el.appendChild(s); words.push(s);
+      });
+    });
+    return words;
+  }
+  function sparkAt(s) {
+    var sc = $('scroll'), r = s.getBoundingClientRect(), sr = sc.getBoundingClientRect(), k = document.createElement('span');
+    k.className = 'spark'; k.textContent = '✦';
+    k.style.left = (r.left - sr.left + r.width / 2) + 'px'; k.style.top = (r.top - sr.top + sc.scrollTop - 6) + 'px';
+    sc.appendChild(k); setTimeout(function () { k.remove(); }, 950);
+  }
+  function spell(words, toText, stagger) {           // hechizo palabra a palabra
+    return new Promise(function (res) {
+      if (!words.length) return res();
+      words.forEach(function (s, i) {
+        setTimeout(function () {
+          var n = 0, iv = setInterval(function () {
+            n++;
+            if (n < 5) { setWord(s, 'glyph', n); if (n === 1 && i % 3 === 0) sfxTick(); return; }
+            clearInterval(iv);
+            setWord(s, toText ? 'text' : 'glyph', 0);
+            if (toText) { s.classList.remove('lit'); void s.offsetWidth; s.classList.add('lit'); if (i % 2 === 0) sparkAt(s); }
+            if (i === words.length - 1) setTimeout(res, 350);
+          }, 50);
+        }, i * stagger);
+      });
+    });
+  }
+  function bookHTML(cls, title, cap) { return '<button class="book ' + cls + '"><span class="cover">' + title + '</span><span class="cap">' + cap + '</span></button>'; }
+  function showActions(html) { $('actions').innerHTML = html; }
+  var letterStarted = false, noGL = false;
+  function setupLetter() {
+    renderLetter('es');
+    $('btnsFinal').style.display = 'none';
+    showActions('<p class="puzzle">Ничего не понятно... 🤔</p>' + bookHTML('mudora', 'Книга<br>Мудоры', 'Прочитать с Книгой Мудоры'));
+    $('actions').querySelector('.book').addEventListener('click', function (e) {
+      var b = e.currentTarget; b.classList.add('used'); sfxSpell();
+      setTimeout(function () {
+        showActions('');
+        spell(Array.prototype.slice.call(document.querySelectorAll('#letter .w')), true, 26).then(function () {
+          showActions('<button class="ghost" id="notClear">Пока не понятно 🤷‍♀️</button>');
+          $('notClear').addEventListener('click', function () {
+            showActions(bookHTML('es', 'Учи<br>испанский!', 'Открыть учебник'));
+            $('actions').querySelector('.book').addEventListener('click', function (e2) {
+              e2.currentTarget.classList.add('used'); sfxSpell();
+              setTimeout(function () {
+                showActions('');
+                spell(Array.prototype.slice.call(document.querySelectorAll('#letter .w')), false, 9).then(function () {
+                  return spell(renderLetter('ru'), true, 26);
+                }).then(function () { if (!noGL) $('btnsFinal').style.display = 'flex'; });
+              }, 450);
+            });
+          });
+        });
+      }, 450);
+    });
+  }
+
   // ---------- Sin WebGL: la nota llega igual ----------
   function hasWebGL() {
     try { var c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); }
@@ -104,7 +240,7 @@
   if (typeof THREE === 'undefined' || !hasWebGL()) {
     $('top').style.display = 'none'; $('hint').style.display = 'none';
     $('bday').style.opacity = 1; $('scrollWrap').classList.add('show');
-    $('again').style.display = 'none'; $('fold').style.display = 'none';
+    noGL = true; setupLetter();
     return;
   }
 
@@ -135,6 +271,10 @@
     [587.33, 739.99, 880, 1174.66].forEach(function (f) { tone(f, 0.5, 1.6, 'triangle', 0.11); });
     for (var i = 0; i < 10; i++) tone(1800 + Math.random() * 2200, 0.5 + i * 0.09, 0.12, 'sine', 0.04);
   }
+  function sfxSpell() {
+    [784, 988, 1175, 1568, 1976, 2349].forEach(function (f, i) { tone(f, i * 0.07, 0.55, 'sine', 0.09); tone(f * 1.5, i * 0.07 + 0.03, 0.3, 'triangle', 0.025); });
+  }
+  function sfxTick() { tone(2200 + Math.random() * 1800, 0, 0.06, 'sine', 0.03); }
   function sfxPop(i) { tone(380 + i * 70, 0, 0.18, 'sine', 0.18, 900 + i * 90); }
   function sfxBirthday() {                                         // "Happy Birthday" (dominio público), caja de música
     var N = { G4: 392, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99 };
@@ -636,7 +776,7 @@
     tweens.length = 0; lidPivot.rotation.x = 0; beam.scale.y = 0.01; beam.material.opacity = 0; warm.intensity = 0; glowInside.material.opacity = 0;
     cast.forEach(function (c) { c.obj.g.visible = false; c.landed = -1; });
     $('bday').style.opacity = 0; $('top').style.opacity = 1; $('hint').style.opacity = 1; $('hint').style.display = '';
-    $('scrollWrap').classList.remove('show'); $('note').style.display = 'none'; state = 'idle';
+    $('scrollWrap').classList.remove('show'); $('note').style.display = 'none'; state = 'idle'; letterStarted = false;
   }
 
   async function openChest() {
@@ -654,12 +794,13 @@
     await wait(3.2);
     state = 'done'; sfxBirthday(); showScroll();
   }
-  function showScroll() { $('note').style.display = 'none'; $('scrollWrap').classList.add('show'); $('scroll').scrollTop = 0; }
+  function showScroll() { $('note').style.display = 'none'; $('scrollWrap').classList.add('show'); $('scroll').scrollTop = 0;
+    if (!letterStarted) { letterStarted = true; setupLetter(); } }
 
   renderer.domElement.addEventListener('pointerdown', function () { if (state === 'idle') openChest(); });
   $('again').addEventListener('click', function () { reset(); setTimeout(openChest, 350); });
   $('fold').addEventListener('click', function () { $('scrollWrap').classList.remove('show'); $('note').style.display = 'block'; });
-  $('note').addEventListener('click', function (e) { e.stopPropagation(); showScroll(); });
+  $('note').addEventListener('click', function (e) { e.stopPropagation(); $('note').style.display = 'none'; $('scrollWrap').classList.add('show'); });
 
   function layout() {
     var w = window.innerWidth, h = window.innerHeight, asp = w / h;
